@@ -17,14 +17,13 @@ class StatTracker
     @game_teams = stats.game_teams
   end
 
-  
-# Game Statistics
+  # Game Statistics
   def highest_total_score
-    @games.map {|game| game.away_goals + game.home_goals}.max
+    @games.map { |game| game.away_goals + game.home_goals }.max
   end
 
   def lowest_total_score
-    @games.map {|game| game.away_goals + game.home_goals}.min
+    @games.map { |game| game.away_goals + game.home_goals }.min
   end
 
   def percentage_home_wins
@@ -67,9 +66,9 @@ class StatTracker
 
   def average_goals_by_season
     result = {}
-    season_groups = @games.group_by { |game| game.season }
+    season_groups = @games.group_by(&:season)
     season_groups.each do |season, games|
-      season_totals = games.map { |game| game.away_goals + game.home_goals}
+      season_totals = games.map { |game| game.away_goals + game.home_goals }
       number_of_games = season_totals.length
       season_average = season_totals.sum.fdiv(number_of_games).round(2)
       result[season] = season_average
@@ -77,28 +76,28 @@ class StatTracker
     result
   end
 
-# League Statistics
+  # League Statistics
   def count_of_teams
     @teams.uniq.count
   end
 
   def best_offense
-    highest = avg_goals_by_team.max_by { |team_id, avg_goals|  avg_goals }
-    best = @teams.find { |team| team.team_id == highest[0]}
+    highest = avg_goals_by_team.max_by { |_team_id, avg_goals| avg_goals }
+    best = @teams.find { |team| team.team_id == highest[0] }
     best.team_name
   end
 
   def worst_offense
-    lowest = avg_goals_by_team.min_by { |team_id, avg_goals|avg_goals }
-    worst = @teams.find { |team| team.team_id == lowest[0]}
+    lowest = avg_goals_by_team.min_by { |_team_id, avg_goals| avg_goals }
+    worst = @teams.find { |team| team.team_id == lowest[0] }
     worst.team_name
   end
 
-  #This is a helper method for .best_offense and .worst_offense
+  # This is a helper method for .best_offense and .worst_offense
   def avg_goals_by_team
-    teams_data = @game_teams.group_by { |team| team.team_id} # group data by team
+    teams_data = @game_teams.group_by(&:team_id)
     teams_data.each do |team_id, game_info|
-      sum = game_info.sum { |game| game.goals}
+      sum = game_info.sum(&:goals)
       num_games = game_info.count
       teams_data[team_id] = (sum / num_games.to_f).round(2)
     end
@@ -117,19 +116,19 @@ class StatTracker
     team_with_highest_score = @teams.find { |team| team.team_id == team_id_with_highest_score }
     team_with_highest_score&.team_name
   end
-  
+
   def lowest_scoring_visitor
     away_scores = average_team_scores(:away_team_id, :away_goals)
-    away_with_lowest_score = away_scores.min_by { |team_id, score| score}.first
+    away_with_lowest_score = away_scores.min_by { |_team_id, score| score }&.first
     team_with_lowest_score = @teams.find { |team| team.team_id == away_with_lowest_score }
-    team_with_lowest_score.team_name
+    team_with_lowest_score&.team_name
   end
 
   def lowest_scoring_home_team
     home_scores = average_team_scores(:home_team_id, :home_goals)
-    home_with_lowest_score = home_scores.min_by { |team_id, score| score}.first
+    home_with_lowest_score = home_scores.min_by { |_team_id, score| score }&.first
     team_with_lowest_score = @teams.find { |team| team.team_id == home_with_lowest_score }
-    team_with_lowest_score.team_name
+    team_with_lowest_score&.team_name
   end
 
   # this is a helper method for highest/lowest scoring visitor/team methods
@@ -146,41 +145,36 @@ class StatTracker
 
   def winningest_coach(season_id)
     games_in_season = season_games(season_id)
-    grouped_by_coach = games_in_season.group_by { |game| game.head_coach }
-    wins_by_coach = grouped_by_coach.each do |coach, games|
-      grouped_by_coach[coach] = games.find_all { |game| game.result == "WIN"}.length
-      # Returns a hash of Coach=>wins
+    grouped_by_coach = games_in_season.group_by(&:head_coach)
+    wins_by_coach = grouped_by_coach.transform_values do |games|
+      games.count { |game| game.result == 'WIN' }
     end
-    wins_by_coach.sort_by { |coach, wins| wins }.last[0]
-    # Sorts hash into arrays from least to most wins
+    wins_by_coach.max_by { |_coach, wins| wins }.first
   end
-  
 
   def worst_coach(season_id)
     games_in_season = season_games(season_id)
-    grouped_by_coach = games_in_season.group_by { |game| game.head_coach }
-    wins_by_coach = grouped_by_coach.each do |coach, games|
-      grouped_by_coach[coach] = games.find_all { |game| game.result == "WIN"}.length
-      # Returns a hash of Coach=>wins
+    grouped_by_coach = games_in_season.group_by(&:head_coach)
+    losses_by_coach = grouped_by_coach.transform_values do |games|
+      games.count { |game| game.result == 'LOSS' }
     end
-    wins_by_coach.sort_by { |coach, wins| wins }.first[0]
-    # Sorts hash into arrays from least to most wins
+    losses_by_coach.min_by { |_coach, losses| losses }.first
   end
 
   def most_accurate_team(season)
     season_games = organize_games_by_season(season)
     team_accuracies = calculate_accuracies(season, season_games)
-    team_accuracies.max_by { |_, accuracy| accuracy }[0]
+    team_accuracies.max_by { |_, accuracy| accuracy }.first
   end
-  
+
   def least_accurate_team(season)
     season_games = organize_games_by_season(season)
     team_accuracies = calculate_accuracies(season, season_games)
-    team_accuracies.min_by { |_, accuracy| accuracy }[0]
+    team_accuracies.min_by { |_, accuracy| accuracy }.first
   end
 
   # This is a helper method for most/least accurate team methods
-  def calculate_accuracies(season_id, season_games)
+  def calculate_accuracies(_season_id, season_games)
     team_goals = Hash.new { |hash, key| hash[key] = [0, 0] }
     season_games.each do |game_team|
       team_goals[game_team.team_id][0] += game_team.goals
@@ -194,40 +188,31 @@ class StatTracker
     end
     team_accuracies
   end
-  
+
   # This is a helper method for most/least accurate team methods
   def organize_games_by_season(season_id)
-    games_in_season = @games.find_all {|game| game.season == season_id}
-    season_game_ids = games_in_season.map {|game| game.game_id}
-    @game_teams.find_all {|game| season_game_ids.include?(game.game_id)}
+    games_in_season = @games.find_all { |game| game.season == season_id }
+    season_game_ids = games_in_season.map(&:game_id)
+    @game_teams.find_all { |game| season_game_ids.include?(game.game_id) }
   end
 
   # This is a helper method for calculate accuracies helper method
   def name_by_id(team_id)
-    team = @teams.find { |team| team.team_id == team_id }
-    team.team_name if team
+    @teams.find { |team| team.team_id == team_id }&.team_name
   end
-  
+
+  def tackles_helper(season)
+    season_games(season).group_by(&:team_id).transform_values { |games| games.sum(&:tackles) }
+  end
+
   def most_tackles(season_id)
-    games_in_season = season_games(season_id)
-    games_by_team = games_in_season.group_by { |team| team.team_id }
-    team_tackles = games_by_team.map do |team, tackles|
-      [team, tackles.map { |game| game.tackles}]
-    end
-    tackle_totals = team_tackles.map {|team, tackles| [team, tackles.sum]}.to_h
-    highest_total = tackle_totals.max_by { |team, tackles| tackles}
-    @teams.find { |team| team.team_id == highest_total.first}.team_name
+    highest_total = tackles_helper(season_id).max_by { |_team, tackles| tackles }
+    @teams.find { |team| team.team_id == highest_total.first }.team_name
   end
 
   def fewest_tackles(season_id)
-    games_in_season = season_games(season_id)
-    games_by_team = games_in_season.group_by { |team| team.team_id }
-    team_tackles = games_by_team.map do |team, tackles|
-      [team, tackles.map { |game| game.tackles}]
-    end
-    tackle_totals = team_tackles.map {|team, tackles| [team, tackles.sum]}.to_h
-    highest_total = tackle_totals.min_by { |team, tackles| tackles}
-    @teams.find { |team| team.team_id == highest_total.first}.team_name
+    highest_total = tackles_helper(season_id).min_by { |_team, tackles| tackles }
+    @teams.find { |team| team.team_id == highest_total.first }.team_name
   end
 
   # This is a helper method for most/fewest tackles

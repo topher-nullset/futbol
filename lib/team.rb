@@ -6,7 +6,6 @@ class Team
               :stadium,
               :link
 
-
   def initialize(data)
     @team_id = data[:team_id]
     @franchise_id = data[:franchiseid]

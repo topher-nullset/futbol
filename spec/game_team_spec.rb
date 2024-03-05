@@ -1,14 +1,14 @@
-require './spec_helper'
+require_relative 'spec_helper'
 
 RSpec.describe GameTeam do
   before(:each) do
     sample_data = {
-      game_id: "2012030221",
-      team_id: "3",
-      hoa: "away",
-      result: "LOSS",
-      settled_in: "OT",
-      head_coach: "John Tortorella",
+      game_id: '2012030221',
+      team_id: '3',
+      hoa: 'away',
+      result: 'LOSS',
+      settled_in: 'OT',
+      head_coach: 'John Tortorella',
       goals: 2,
       shots: 8,
       tackles: 44,
@@ -28,34 +28,34 @@ RSpec.describe GameTeam do
   end
 
   it 'has a game_id' do
-    expect(@game_team.game_id).to eq("2012030221")
+    expect(@game_team.game_id).to eq('2012030221')
   end
 
   it 'has a team_id' do
-    expect(@game_team.team_id).to eq("3")
+    expect(@game_team.team_id).to eq('3')
   end
 
   it 'has a Home or Away' do
-    expect(@game_team.hoa).to eq("away")
+    expect(@game_team.hoa).to eq('away')
   end
 
   it 'has a result' do
-    expect(@game_team.result).to eq("LOSS")
+    expect(@game_team.result).to eq('LOSS')
   end
 
   it 'has a settled in' do
-    expect(@game_team.settled_in).to eq("OT")
+    expect(@game_team.settled_in).to eq('OT')
   end
 
   it 'has a head coach' do
-    expect(@game_team.head_coach).to eq("John Tortorella")
+    expect(@game_team.head_coach).to eq('John Tortorella')
   end
 
   it 'has goals' do
     expect(@game_team.goals).to eq(2)
   end
 
-  it 'has shots'do
+  it 'has shots' do
     expect(@game_team.shots).to eq(8)
   end
 
